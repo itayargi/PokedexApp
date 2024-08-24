@@ -1,30 +1,34 @@
 import { Image, StyleSheet, Text, View } from "react-native";
 import React, { useEffect } from "react";
-// import { wait } from "/src/utils/functionUtils";
-// import { ScreenName } from "@/src/utils/enum";
-// import { navigate } from "@/src/navigation/navigationRef";
-// import imageIndex from "@/assets/images/imageIndex";
-// import { wait } from "@/src/utils/functionUtils";
-// import { ScreenName } from "@/src/utils/enum";
-// import { navigate } from "@/src/navigation/navigationRef";
-// import imageIndex from "@/assets/images/imageIndex";
-// import { wait } from "@/src/utils/functionUtils";
 import { ScreenName } from "@/utils/enum";
 import { wait } from "@/utils/functionUtils";
 import { navigate } from "@/navigation/navigationRef";
 import imageIndex from "assets/images/imageIndex";
+import { pokemonStore } from "@/store/PokemonStore";
 
 type Props = {};
 
 const Splash = (props: Props) => {
   useEffect(() => {
-    wait(2000).then(() => {
-      navigate(ScreenName.PokemonList);
-    });
+    const onInit = async () => {
+      pokemonStore.setLoading(true);
+      await pokemonStore.fetchPokemon();
+      await pokemonStore.loadCapturedPokemon(); // Load captured Pokémon from the server
+      wait(1500).then(() => {
+        pokemonStore.setLoading(false);
+        navigate(ScreenName.PokemonList);
+      });
+    };
+    onInit();
   }, []);
+
   return (
     <View style={styles.container}>
-      <Image resizeMode='stretch' source={imageIndex.splash()} style={styles.image} />
+      <Image
+        resizeMode="stretch"
+        source={imageIndex.splash()}
+        style={styles.image}
+      />
     </View>
   );
 };

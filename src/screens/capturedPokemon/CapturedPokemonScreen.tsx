@@ -1,12 +1,9 @@
-import React from "react";
-import { View, Text, FlatList, StyleSheet } from "react-native";
-import { observer } from "mobx-react-lite";
-import { globalStyles } from "@/styles";
 import { pokemonStore } from "@/store/PokemonStore";
+import { globalStyles } from "@/styles";
 import { Pokemon } from "@/types/types";
-// import { Pokemon } from "@/src/types/types";
-// import { globalStyles } from "@/src/styles";
-// import { pokemonStore } from "@/src/store/PokemonStore";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 
 const CapturedPokemonScreen = observer(() => {
   const renderItem = ({ item }: { item: Pokemon }) => (
@@ -20,7 +17,8 @@ const CapturedPokemonScreen = observer(() => {
       <Text style={globalStyles.title}>Captured Pokémon</Text>
       <FlatList
         data={pokemonStore.capturedPokemon}
-        keyExtractor={(item) => item.number.toString()}
+        keyExtractor={(item) => pokemonStore.generateUniqueId(item)}
+        showsVerticalScrollIndicator={false}
         renderItem={renderItem}
       />
     </View>

@@ -3,6 +3,8 @@ import axiosInstance from "../api/interceptor";
 import { Pokemon, PokemonStoreInterface } from "../types/types";
 import { SortByNumber } from "@/utils/enum";
 import { goBack } from "@/navigation/navigationRef";
+import * as Contacts from "expo-contacts";
+import { Alert } from "react-native";
 
 class PokemonStore implements PokemonStoreInterface {
   pokemonList: Pokemon[] = [];
@@ -10,8 +12,8 @@ class PokemonStore implements PokemonStoreInterface {
   availableTypes: string[] = [];
   loading = false;
   currentPage = 0;
-  selectedType: string | undefined = undefined; // New state for filter type
-  sortOrder: SortByNumber | undefined = undefined; // New state for sort order
+  selectedType: string | undefined = undefined;
+  sortOrder: SortByNumber | undefined = undefined;
   searchQuery: string = "";
 
   constructor() {
@@ -19,6 +21,7 @@ class PokemonStore implements PokemonStoreInterface {
       loading: observable,
       availableTypes: observable,
       pokemonList: observable,
+      capturedPokemon: observable,
       selectedType: observable,
       sortOrder: observable,
       searchQuery: observable,
@@ -35,14 +38,20 @@ class PokemonStore implements PokemonStoreInterface {
       setSelectedType: action,
       setSortOrder: action,
       resetFilters: action,
+      loadCapturedPokemon: action,
     });
+
+    this.loadCapturedPokemon(); // Load captured Pokémon on initialization
   }
+
   setSelectedType(type: string | undefined) {
     this.selectedType = type;
   }
+
   setSearchQuery(query: string) {
     this.searchQuery = query;
   }
+
   setSortOrder(order: SortByNumber | undefined) {
     this.sortOrder = order;
   }
@@ -55,7 +64,6 @@ class PokemonStore implements PokemonStoreInterface {
     goBack();
   }
 
-  // Utility function to generate a unique ID for each Pokemon
   generateUniqueId = (pokemon: Pokemon): string => {
     return `${pokemon.number}_${pokemon.name}`;
   };
@@ -63,16 +71,24 @@ class PokemonStore implements PokemonStoreInterface {
   setLoading(status: boolean) {
     this.loading = status;
   }
+
   setAvailableTypes(types: string[]) {
     this.availableTypes = types;
   }
+
   appendPokemonList(pokeList: Pokemon[]) {
-    const newList = pokeList.map((pokemon) => ({
-      ...pokemon,
-      id: this.generateUniqueId(pokemon),
-    }));
+    const newList = pokeList.map((pokemon) => {
+      const capturedPokemon = this.capturedPokemon.find(
+        (p) => p.name === pokemon.name
+      );
+      return {
+        ...pokemon,
+        id: this.generateUniqueId(pokemon),
+        captured: !!capturedPokemon, // Update the captured status
+      };
+    });
     this.pokemonList = newList;
-    // Extract unique types from the list of Pokémon
+
     const types: string[] = [
       ...new Set(
         newList.flatMap((pokemon) => [pokemon.type_one, pokemon.type_two])
@@ -85,8 +101,6 @@ class PokemonStore implements PokemonStoreInterface {
   fetchPokemon = async (typeFilter?: string, searchQuery?: string) => {
     try {
       this.setLoading(true);
-
-      // Clear the current list when fetching new data
       this.pokemonList = [];
 
       let url = "/pokemon";
@@ -116,7 +130,7 @@ class PokemonStore implements PokemonStoreInterface {
   };
 
   fetchNextPage = async () => {
-    if (this.loading) return; 
+    if (this.loading) return;
     this.setLoading(true);
     try {
       const response = await axiosInstance.get<Pokemon[]>(
@@ -135,7 +149,7 @@ class PokemonStore implements PokemonStoreInterface {
     }
   };
 
-  sortPokemonList = (order: "asc" | "desc") => {
+  sortPokemonList = (order: SortByNumber) => {
     runInAction(() => {
       this.pokemonList = this.pokemonList.slice().sort((a, b) => {
         return order === "asc" ? a.number - b.number : b.number - a.number;
@@ -151,22 +165,116 @@ class PokemonStore implements PokemonStoreInterface {
     });
   };
 
-  markAsCaptured = (pokemon: Pokemon) => {
-    runInAction(() => {
-      if (!this.capturedPokemon.some((p) => p.id === pokemon.id)) {
-        pokemon.captured = true;
-        this.capturedPokemon.push(pokemon);
-      }
-    });
-  };
+  async loadCapturedPokemon() {
+    try {
+      const response = await axiosInstance.get<string[]>("/captured");
+      const capturedNames = response.data;
 
-  releasePokemon = (pokemon: Pokemon) => {
-    runInAction(() => {
-      this.capturedPokemon = this.capturedPokemon.filter(
-        (p) => p.id !== pokemon.id
+      // Match the names with full Pokemon data
+      const capturedPokemons = this.pokemonList.filter((pokemon) =>
+        capturedNames.includes(pokemon.name)
       );
+
+      runInAction(() => {
+        this.capturedPokemon = capturedPokemons.map((pokemon) => ({
+          ...pokemon,
+          captured: true,
+        }));
+      });
+    } catch (error) {
+      console.error("Failed to load captured Pokémon:", error);
+    }
+  }
+
+  async markAsCaptured(pokemon: Pokemon) {
+    try {
+    const res =   await axiosInstance.post("/capture", { name: pokemon.name });
+      runInAction(() => {
+        if (!this.capturedPokemon.some((p) => p.name === pokemon.name)) {
+          pokemon.captured = true;
+          this.capturedPokemon.push(pokemon);
+          this.updateCapturedStatus(pokemon.name, true); // Ensure the status is updated
+        }
+      });
+    } catch (error) {
+      console.error("Failed to mark Pokémon as captured on server:", error);
+    }
+  }
+
+  async saveAsContact(pokemon: Pokemon) {
+    const { status } = await Contacts.requestPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission denied",
+        "Cannot access contacts without permission."
+      );
+      return;
+    }
+
+    const contact = {
+      [Contacts.Fields.FirstName]: pokemon.name,
+      [Contacts.Fields.Company]: "Pokémon",
+      [Contacts.Fields.Note]: `Type: ${pokemon.type_one}${
+        pokemon.type_two ? ` / ${pokemon.type_two}` : ""
+      }, Number: ${pokemon.number}, HP: ${pokemon.hit_points}, Attack: ${
+        pokemon.attack
+      }, Defense: ${pokemon.defense}`,
+      contactType: Contacts.ContactTypes.Person,
+    };
+
+    try {
+      const contactId = await Contacts.addContactAsync(
+        contact as Contacts.Contact
+      );
+      if (contactId) {
+        this.markAsCaptured(pokemon);
+        Alert.alert(
+          "Success",
+          `${pokemon.name} has been added to your contacts.`
+        );
+      }
+    } catch (error) {
+      console.error("Failed to save contact:", error);
+      Alert.alert("Error", "Failed to save contact.");
+    }
+  }
+
+  async releasePokemon(pokemon: Pokemon) {
+    const contacts = await Contacts.getContactsAsync({
+      fields: [Contacts.Fields.Name],
     });
-  };
+
+    const contact = contacts.data.find((c) => c.name === pokemon.name);
+    if (contact && contact.id) {
+      try {
+        await Contacts.removeContactAsync(contact.id);
+        runInAction(() => {
+          this.capturedPokemon = this.capturedPokemon.filter(
+            (p) => p.name !== pokemon.name
+          );
+          this.updateCapturedStatus(pokemon.name, false); // Ensure the status is updated
+        });
+        Alert.alert(
+          "Released",
+          `${pokemon.name} has been removed from your contacts.`
+        );
+      } catch (error) {
+        console.error("Failed to release contact:", error);
+        Alert.alert("Error", "Failed to release contact.");
+      }
+    } else {
+      Alert.alert(
+        "Not Found",
+        `${pokemon.name} is not found in your contacts.`
+      );
+    }
+  }
+
+  updateCapturedStatus(name: string, captured: boolean) {
+    this.pokemonList = this.pokemonList.map((pokemon) =>
+      pokemon.name === name ? { ...pokemon, captured } : pokemon
+    );
+  }
 }
 
 export const pokemonStore = new PokemonStore();
