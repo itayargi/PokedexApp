@@ -11,12 +11,8 @@ type Props = {};
 const Splash = (props: Props) => {
   useEffect(() => {
     const onInit = async () => {
-      pokemonStore.setLoading(true);
-      await pokemonStore.fetchPokemon();
-      await pokemonStore.loadCapturedPokemon(); // Load captured Pokémon from the server
-      wait(1500).then(() => {
-        pokemonStore.setLoading(false);
-        navigate(ScreenName.PokemonList);
+      wait(2000).then(() => {
+        navigate(ScreenName.HomeScreen);
       });
     };
     onInit();

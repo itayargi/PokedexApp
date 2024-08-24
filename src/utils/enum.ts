@@ -3,6 +3,7 @@ export enum ScreenName {
   PokemonList = "PokemonList",
   CapturedPokemon = "CapturedPokemon",
   FilterSort = "FilterSort",
+  HomeScreen = 'HomeScreen'
 }
 export enum SortByNumber {
     Ascending = 'asc',

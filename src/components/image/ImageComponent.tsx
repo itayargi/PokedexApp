@@ -25,7 +25,7 @@ const ImageComponent = ({ name }: { name: string }) => {
   return (
     <Image
       source={{ uri: imageUrl }}
-      style={{ width: 60, height: 60, marginRight: 15 }}
+      style={{ width: 60, height: 60, marginHorizontal: 10 }}
     />
   );
 };

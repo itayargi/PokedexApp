@@ -1,10 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
   FlatList,
   StyleSheet,
-  Button,
   TouchableOpacity,
 } from "react-native";
 import { observer } from "mobx-react-lite";
@@ -14,47 +13,43 @@ import { globalStyles } from "@/styles";
 import { navigate } from "@/navigation/navigationRef";
 import { ScreenName } from "@/utils/enum";
 import ImageComponent from "@/components/image/ImageComponent";
-import { isPokemonCaptured, wait } from "@/utils/functionUtils";
 
 const PokemonListScreen = observer(() => {
-  const goToCapturePokemon = () => {
-    navigate(ScreenName.CapturedPokemon);
-  };
+  const flatListRef = useRef<FlatList>(null);
 
-  const renderItem = ({ item }: { item: Pokemon }) => {
-    item.captured = isPokemonCaptured(item);
-    return (
-      <View style={styles.pokemonItem}>
-        <ImageComponent name={item.name} />
-        <View style={styles.pokemonDetails}>
-          <Text style={styles.pokemonName}>{item.name}</Text>
-          <Text>
-            Type: {item.type_one}
-            {item.type_two ? ` / ${item.type_two}` : ""}
+  // Scroll to the top when the data changes
+  React.useEffect(() => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, [pokemonStore.pokemonList]);
+
+  const renderItem = ({ item }: { item: Pokemon }) => (
+    <View style={styles.pokemonItem}>
+      <ImageComponent name={item.name} />
+      <View style={styles.pokemonDetails}>
+        <Text style={styles.pokemonName}>{item.name}</Text>
+        <Text>
+          Type: {item.type_one}
+          {item.type_two ? ` / ${item.type_two}` : ""}
+        </Text>
+        <Text>Number: {item.number}</Text>
+        <Text>HP: {item.hit_points}</Text>
+        <Text>Attack: {item.attack}</Text>
+        <Text>Defense: {item.defense}</Text>
+        <TouchableOpacity
+          style={[styles.captureButton, item.captured && styles.releaseButton]}
+          onPress={() =>
+            item.captured
+              ? pokemonStore.releasePokemon(item)
+              : pokemonStore.saveAsContact(item)
+          }
+        >
+          <Text style={styles.captureButtonText}>
+            {item.captured ? "Release" : "Catch"}
           </Text>
-          <Text>Number: {item.number}</Text>
-          <Text>HP: {item.hit_points}</Text>
-          <Text>Attack: {item.attack}</Text>
-          <Text>Defense: {item.defense}</Text>
-          <TouchableOpacity
-            style={[
-              styles.captureButton,
-              item.captured && styles.releaseButton,
-            ]}
-            onPress={() =>
-              item.captured
-                ? pokemonStore.releasePokemon(item)
-                : pokemonStore.saveAsContact(item)
-            }
-          >
-            <Text style={styles.captureButtonText}>
-              {item.captured ? "Release" : "Catch"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       </View>
-    );
-  };
+    </View>
+  );
 
   return (
     <View style={globalStyles.container}>
@@ -65,15 +60,9 @@ const PokemonListScreen = observer(() => {
         >
           <Text style={styles.headerButtonText}>Filter and Sort</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={goToCapturePokemon}
-        >
-          <Text style={styles.headerButtonText}>Captured Pokémon</Text>
-        </TouchableOpacity>
       </View>
-
       <FlatList
+        ref={flatListRef}
         data={pokemonStore.pokemonList}
         keyExtractor={(item) => pokemonStore.generateUniqueId(item)}
         renderItem={renderItem}
@@ -88,8 +77,8 @@ const PokemonListScreen = observer(() => {
 
 const styles = StyleSheet.create({
   headerButtonsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
+    height: 40,
     marginBottom: 20,
   },
   headerButton: {
@@ -106,7 +95,7 @@ const styles = StyleSheet.create({
   },
   pokemonItem: {
     flexDirection: "row",
-    backgroundColor: "#f8f8f8",
+    backgroundColor: "#fff",
     marginBottom: 10,
     padding: 15,
     borderRadius: 8,

@@ -6,6 +6,11 @@ import React from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
 const CapturedPokemonScreen = observer(() => {
+  // Filter the pokemonList to only include captured Pokémon
+  const capturedPokemonList = pokemonStore.pokemonList.filter((pokemon) =>
+    pokemonStore.capturedPokemonSet.has(pokemon.name)
+  );
+
   const renderItem = ({ item }: { item: Pokemon }) => (
     <View style={styles.pokemonItem}>
       <Text style={styles.pokemonName}>{item.name}</Text>
@@ -16,7 +21,7 @@ const CapturedPokemonScreen = observer(() => {
     <View style={globalStyles.container}>
       <Text style={globalStyles.title}>Captured Pokémon</Text>
       <FlatList
-        data={pokemonStore.capturedPokemon}
+        data={capturedPokemonList}
         keyExtractor={(item) => pokemonStore.generateUniqueId(item)}
         showsVerticalScrollIndicator={false}
         renderItem={renderItem}

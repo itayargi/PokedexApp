@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,34 +10,39 @@ import { observer } from "mobx-react-lite";
 import { pokemonStore } from "@/store/PokemonStore";
 import { Picker } from "@react-native-picker/picker";
 import { goBack } from "@/navigation/navigationRef";
-import { SortByNumber } from "@/utils/enum"; // Import the enum
+import { SortByNumber } from "@/utils/enum";
 
 const FilterSortScreen = observer(() => {
-  const handleTypeChange = (type: string | undefined) => {
-    pokemonStore.setSelectedType(type);
-  };
-
-  const handleSortChange = (order: SortByNumber) => {
-    pokemonStore.setSortOrder(order);
-  };
-
-  const handleSearchQueryChange = (query: string) => {
-    pokemonStore.setSearchQuery(query);
-  };
+  // Local state to temporarily store the user's choices
+  const [selectedType, setSelectedType] = useState<string | undefined>(
+    pokemonStore.selectedType
+  );
+  const [sortOrder, setSortOrder] = useState<SortByNumber | undefined>(
+    pokemonStore.sortOrder
+  );
+  const [searchQuery, setSearchQuery] = useState<string>(
+    pokemonStore.searchQuery
+  );
 
   const applyAndGoBack = async () => {
-    await pokemonStore.fetchPokemon(
-      pokemonStore.selectedType,
-      pokemonStore.searchQuery
-    );
-    if (pokemonStore.sortOrder) {
-      pokemonStore.sortPokemonList(pokemonStore.sortOrder);
+    // Apply the changes to the store
+    pokemonStore.setSelectedType(selectedType);
+    pokemonStore.setSortOrder(sortOrder);
+    pokemonStore.setSearchQuery(searchQuery);
+
+    await pokemonStore.fetchPokemon(selectedType, searchQuery);
+    if (sortOrder) {
+      pokemonStore.sortPokemonList(sortOrder);
     }
+
     goBack();
   };
 
   const resetFilters = () => {
     pokemonStore.resetFilters();
+    setSelectedType(undefined);
+    setSortOrder(undefined);
+    setSearchQuery("");
   };
 
   return (
@@ -47,9 +52,9 @@ const FilterSortScreen = observer(() => {
       <View style={styles.dropdownContainer}>
         <Text style={styles.label}>Filter by Type:</Text>
         <Picker
-          selectedValue={pokemonStore.selectedType}
+          selectedValue={selectedType}
           style={styles.picker}
-          onValueChange={handleTypeChange}
+          onValueChange={setSelectedType}
         >
           <Picker.Item label="All" value={undefined} />
           {pokemonStore.availableTypes.map((type) => (
@@ -62,8 +67,8 @@ const FilterSortScreen = observer(() => {
       <TextInput
         style={styles.searchInput}
         placeholder="Enter Pokémon name or attribute..."
-        value={pokemonStore.searchQuery}
-        onChangeText={handleSearchQueryChange}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
       />
 
       <Text style={styles.label}>Sort by Number:</Text>
@@ -71,20 +76,18 @@ const FilterSortScreen = observer(() => {
         <TouchableOpacity
           style={[
             styles.sortButton,
-            pokemonStore.sortOrder === SortByNumber.Ascending &&
-              styles.activeSortButton,
+            sortOrder === SortByNumber.Ascending && styles.activeSortButton,
           ]}
-          onPress={() => handleSortChange(SortByNumber.Ascending)}
+          onPress={() => setSortOrder(SortByNumber.Ascending)}
         >
           <Text style={styles.sortButtonText}>Ascending</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[
             styles.sortButton,
-            pokemonStore.sortOrder === SortByNumber.Descending &&
-              styles.activeSortButton,
+            sortOrder === SortByNumber.Descending && styles.activeSortButton,
           ]}
-          onPress={() => handleSortChange(SortByNumber.Descending)}
+          onPress={() => setSortOrder(SortByNumber.Descending)}
         >
           <Text style={styles.sortButtonText}>Descending</Text>
         </TouchableOpacity>
@@ -140,7 +143,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   picker: {
-    height: 180, 
+    height: 180,
     width: "100%",
   },
   searchInput: {
