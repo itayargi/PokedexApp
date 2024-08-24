@@ -1,12 +1,12 @@
 import React, { useEffect } from "react";
-import { View, Text, FlatList, Image, StyleSheet, Button } from "react-native";
+import { View, Text, FlatList, StyleSheet, Button } from "react-native";
 import { observer } from "mobx-react-lite";
 import { pokemonStore } from "@/store/PokemonStore";
 import { Pokemon } from "@/types/types";
 import { globalStyles } from "@/styles";
-// import { pokemonStore } from "@/src/store/PokemonStore";
-// import { globalStyles } from "@/src/styles";
-// import { Pokemon } from "@/src/types/types";
+import { navigate } from "@/navigation/navigationRef";
+import { ScreenName } from "@/utils/enum";
+import ImageComponent from "@/components/image/ImageComponent";
 
 const PokemonListScreen = observer(() => {
   useEffect(() => {
@@ -15,12 +15,7 @@ const PokemonListScreen = observer(() => {
 
   const renderItem = ({ item }: { item: Pokemon }) => (
     <View style={styles.pokemonItem}>
-      <Image
-        source={{
-          uri: `http://localhost:8080/icon/${item.name.toLowerCase()}`,
-        }}
-        style={styles.pokemonImage}
-      />
+      <ImageComponent name={item.name} />
       <View style={styles.pokemonDetails}>
         <Text style={styles.pokemonName}>{item.name}</Text>
         <Text>
@@ -45,33 +40,19 @@ const PokemonListScreen = observer(() => {
 
   return (
     <View style={globalStyles.container}>
-      {pokemonStore.loading ? (
-        <Text>Loading...</Text>
-      ) : (
-        <>
-          <Button
-            title="Sort Ascending"
-            onPress={() => pokemonStore.sortPokemonList("asc")}
-          />
-          <Button
-            title="Sort Descending"
-            onPress={() => pokemonStore.sortPokemonList("desc")}
-          />
-          <Button
-            title="Filter Fire Type"
-            onPress={() => pokemonStore.filterPokemonList("Fire")}
-          />
-          <FlatList
-            data={pokemonStore.pokemonList}
-            keyExtractor={(item) => item.number.toString()}
-            renderItem={renderItem}
-            onEndReachedThreshold={0.5}
-            onEndReached={() => {
-              pokemonStore.fetchNextPage();
-            }}
-          />
-        </>
-      )}
+      <Button
+        title="Filter and Sort"
+        onPress={() => navigate(ScreenName.FilterSort)}
+      />
+
+      <FlatList
+        data={pokemonStore.pokemonList}
+        keyExtractor={(item) => pokemonStore.generateUniqueId(item)}
+        renderItem={renderItem}
+        bounces={false}
+        initialNumToRender={10}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 });
@@ -79,25 +60,21 @@ const PokemonListScreen = observer(() => {
 const styles = StyleSheet.create({
   pokemonItem: {
     flexDirection: "row",
-    backgroundColor: "#fff",
+    backgroundColor: "#f8f8f8",
     marginBottom: 10,
-    padding: 10,
+    padding: 15,
     borderRadius: 8,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
   },
-  pokemonImage: {
-    width: 60,
-    height: 60,
-    marginRight: 10,
-  },
   pokemonDetails: {
     justifyContent: "center",
+    flex: 1,
   },
   pokemonName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#333",
   },

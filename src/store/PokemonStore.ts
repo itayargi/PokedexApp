@@ -1,16 +1,27 @@
 import { makeAutoObservable, action, runInAction, observable } from "mobx";
 import axiosInstance from "../api/interceptor";
 import { Pokemon, PokemonStoreInterface } from "../types/types";
+import { SortByNumber } from "@/utils/enum";
+import { goBack } from "@/navigation/navigationRef";
 
 class PokemonStore implements PokemonStoreInterface {
   pokemonList: Pokemon[] = [];
   capturedPokemon: Pokemon[] = [];
+  availableTypes: string[] = [];
   loading = false;
   currentPage = 0;
+  selectedType: string | undefined = undefined; // New state for filter type
+  sortOrder: SortByNumber | undefined = undefined; // New state for sort order
+  searchQuery: string = "";
 
   constructor() {
     makeAutoObservable(this, {
       loading: observable,
+      availableTypes: observable,
+      pokemonList: observable,
+      selectedType: observable,
+      sortOrder: observable,
+      searchQuery: observable,
       fetchPokemon: action,
       fetchNextPage: action,
       sortPokemonList: action,
@@ -19,7 +30,29 @@ class PokemonStore implements PokemonStoreInterface {
       releasePokemon: action,
       setLoading: action,
       appendPokemonList: action,
+      setAvailableTypes: action,
+      setSearchQuery: action,
+      setSelectedType: action,
+      setSortOrder: action,
+      resetFilters: action,
     });
+  }
+  setSelectedType(type: string | undefined) {
+    this.selectedType = type;
+  }
+  setSearchQuery(query: string) {
+    this.searchQuery = query;
+  }
+  setSortOrder(order: SortByNumber | undefined) {
+    this.sortOrder = order;
+  }
+
+  async resetFilters() {
+    this.selectedType = undefined;
+    this.sortOrder = undefined;
+    this.searchQuery = "";
+    await this.fetchPokemon();
+    goBack();
   }
 
   // Utility function to generate a unique ID for each Pokemon
@@ -30,19 +63,32 @@ class PokemonStore implements PokemonStoreInterface {
   setLoading(status: boolean) {
     this.loading = status;
   }
-
-  // Always appends new Pokémon to the existing list
+  setAvailableTypes(types: string[]) {
+    this.availableTypes = types;
+  }
   appendPokemonList(pokeList: Pokemon[]) {
     const newList = pokeList.map((pokemon) => ({
       ...pokemon,
       id: this.generateUniqueId(pokemon),
     }));
-    this.pokemonList = [...this.pokemonList, ...newList];
+    this.pokemonList = newList;
+    // Extract unique types from the list of Pokémon
+    const types: string[] = [
+      ...new Set(
+        newList.flatMap((pokemon) => [pokemon.type_one, pokemon.type_two])
+      ),
+    ].filter(Boolean);
+
+    this.setAvailableTypes(types);
   }
 
   fetchPokemon = async (typeFilter?: string, searchQuery?: string) => {
     try {
       this.setLoading(true);
+
+      // Clear the current list when fetching new data
+      this.pokemonList = [];
+
       let url = "/pokemon";
       const params: string[] = [];
 
@@ -55,9 +101,10 @@ class PokemonStore implements PokemonStoreInterface {
       if (params.length > 0) {
         url += `?${params.join("&")}`;
       }
+
       const response = await axiosInstance.get<Pokemon[]>(url);
       runInAction(() => {
-        this.appendPokemonList(response.data); // Appending even on initial fetch
+        this.appendPokemonList(response.data);
         this.setLoading(false);
       });
     } catch (error) {
@@ -69,7 +116,7 @@ class PokemonStore implements PokemonStoreInterface {
   };
 
   fetchNextPage = async () => {
-    if (this.loading) return; // Prevent multiple simultaneous requests
+    if (this.loading) return; 
     this.setLoading(true);
     try {
       const response = await axiosInstance.get<Pokemon[]>(

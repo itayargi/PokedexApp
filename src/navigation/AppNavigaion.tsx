@@ -9,22 +9,25 @@ import Splash from "../screens/splash/Splash";
 import PokemonListScreen from "../screens/pokemonList/PokemonListScreen";
 import CapturedPokemonScreen from "../screens/capturedPokemon/CapturedPokemonScreen";
 import { navigationRef } from "./navigationRef";
-
+import FilterSortScreen from "@/screens/filter/FilterSortScreen";
+import { View } from "react-native";
 
 const Stack = createStackNavigator();
 
 const AppNavigator = () => (
-  <NavigationContainer independent ref={navigationRef}>
-    <Stack.Navigator initialRouteName={ScreenName.Splash}>
+  <NavigationContainer ref={navigationRef}>
+    <Stack.Navigator screenOptions={{}} initialRouteName={ScreenName.Splash}>
       <Stack.Screen name={ScreenName.Splash} component={Splash} />
       <Stack.Screen
         name={ScreenName.PokemonList}
         component={PokemonListScreen}
+        options={{ headerLeft: ()=>null, headerTitle:"Pokemon List" }}
       />
       <Stack.Screen
         name={ScreenName.CapturedPokemon}
         component={CapturedPokemonScreen}
       />
+      <Stack.Screen name={ScreenName.FilterSort} component={FilterSortScreen} options={{headerBackTitle:' '}}/>
     </Stack.Navigator>
   </NavigationContainer>
 );
