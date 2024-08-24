@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Image, Text } from "react-native";
+import React, { useState, useEffect, memo } from "react";
+import { Image, Text, View } from "react-native";
 
 const ImageComponent = ({ name }: { name: string }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -19,7 +19,7 @@ const ImageComponent = ({ name }: { name: string }) => {
   }, [name]);
 
   if (!imageUrl) {
-    return <Text>Loading...</Text>;
+    return <View style={{width:60, height:60}} />
   }
 
   return (
@@ -30,4 +30,4 @@ const ImageComponent = ({ name }: { name: string }) => {
   );
 };
 
-export default ImageComponent;
+export default memo(ImageComponent);

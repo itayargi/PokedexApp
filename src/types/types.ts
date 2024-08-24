@@ -1,4 +1,4 @@
-import { ScreenName } from "../utils/enum";
+import { ScreenName, SortByNumber } from "../utils/enum";
 
 export interface Pokemon {
   captured: boolean;
@@ -19,9 +19,29 @@ export interface Pokemon {
 }
 
 export interface PokemonStoreInterface {
-  pokemonList: Pokemon[];
+  capturePokemonArray: Pokemon[];
+  // filteredPokemonList: Pokemon[];
+  capturedPokemonSet: Set<string>;
+  availableTypes: string[];
   loading: boolean;
-  fetchPokemon: () => Promise<void>;
+  currentPage: number;
+  selectedType: string | undefined;
+  sortOrder: SortByNumber | undefined;
+  searchQuery: string;
+  noMorePokemons: boolean;
+
+  fetchPokemon: (typeFilter?: string, searchQuery?: string) => Promise<void>;
+  fetchNextPage: () => Promise<void>;
+  loadCapturedPokemon: () => Promise<void>;
+  resetFilters: () => Promise<void>;
+  sortPokemonList: (order: SortByNumber) => void;
+  filterPokemonList: (type: string) => void;
+  markAsCaptured: (pokemon: Pokemon) => Promise<void>;
+  releasePokemon: (pokemon: Pokemon) => Promise<void>;
+  setCurrentPage: (number: number) => void;
+  setSelectedType: (type: string | undefined) => void;
+  setSearchQuery: (query: string) => void;
+  setSortOrder: (order: SortByNumber | undefined) => void;
 }
 export type AppNavigationParams = {
   [ScreenName.Splash]: undefined;

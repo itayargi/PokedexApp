@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -16,39 +16,55 @@ import ImageComponent from "@/components/image/ImageComponent";
 
 const PokemonListScreen = observer(() => {
   const flatListRef = useRef<FlatList>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Scroll to the top when the data changes
-  React.useEffect(() => {
-    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-  }, [pokemonStore.pokemonList]);
+  const handleNextPage = async () => {
+    if (pokemonStore.loading || pokemonStore.noMorePokemons) return;
+    await pokemonStore.fetchNextPage();
+    setCurrentPage((prev) => prev + 1);
+  };
 
-  const renderItem = ({ item }: { item: Pokemon }) => (
-    <View style={styles.pokemonItem}>
-      <ImageComponent name={item.name} />
-      <View style={styles.pokemonDetails}>
-        <Text style={styles.pokemonName}>{item.name}</Text>
-        <Text>
-          Type: {item.type_one}
-          {item.type_two ? ` / ${item.type_two}` : ""}
-        </Text>
-        <Text>Number: {item.number}</Text>
-        <Text>HP: {item.hit_points}</Text>
-        <Text>Attack: {item.attack}</Text>
-        <Text>Defense: {item.defense}</Text>
-        <TouchableOpacity
-          style={[styles.captureButton, item.captured && styles.releaseButton]}
-          onPress={() =>
-            item.captured
-              ? pokemonStore.releasePokemon(item)
-              : pokemonStore.saveAsContact(item)
-          }
-        >
-          <Text style={styles.captureButtonText}>
-            {item.captured ? "Release" : "Catch"}
+  const handlePreviousPage = async () => {
+    if (currentPage > 1 && !pokemonStore.loading) {
+      pokemonStore.currentPage -= 2; // Step back two pages because fetchNextPage increments it
+      await pokemonStore.fetchNextPage();
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const renderItem = useCallback(
+    ({ item }: { item: Pokemon }) => (
+      <View style={styles.pokemonItem}>
+        <ImageComponent name={item.name} />
+        <View style={styles.pokemonDetails}>
+          <Text style={styles.pokemonName}>{item.name}</Text>
+          <Text>
+            Type: {item.type_one}
+            {item.type_two ? ` / ${item.type_two}` : ""}
           </Text>
-        </TouchableOpacity>
+          <Text>Number: {item.number}</Text>
+          <Text>HP: {item.hit_points}</Text>
+          <Text>Attack: {item.attack}</Text>
+          <Text>Defense: {item.defense}</Text>
+          <TouchableOpacity
+            style={[
+              styles.captureButton,
+              item.captured && styles.releaseButton,
+            ]}
+            onPress={() =>
+              item.captured
+                ? pokemonStore.releasePokemon(item)
+                : pokemonStore.saveAsContact(item)
+            }
+          >
+            <Text style={styles.captureButtonText}>
+              {item.captured ? "Release" : "Catch"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    ),
+    []
   );
 
   return (
@@ -61,16 +77,45 @@ const PokemonListScreen = observer(() => {
           <Text style={styles.headerButtonText}>Filter and Sort</Text>
         </TouchableOpacity>
       </View>
+
       <FlatList
         ref={flatListRef}
         data={pokemonStore.pokemonList}
-        keyExtractor={(item) => pokemonStore.generateUniqueId(item)}
+        keyExtractor={(item) => item.id} 
         renderItem={renderItem}
         bounces={false}
         initialNumToRender={10}
         showsVerticalScrollIndicator={false}
+        windowSize={5} 
+        maxToRenderPerBatch={10} 
+        updateCellsBatchingPeriod={50} 
         contentContainerStyle={styles.listContent}
       />
+
+      {/* Pagination Controls */}
+      <View style={styles.paginationContainer}>
+        <TouchableOpacity
+          style={[
+            styles.paginationButton,
+            currentPage === 1 && styles.disabledButton,
+          ]}
+          onPress={handlePreviousPage}
+          disabled={currentPage === 1 || pokemonStore.loading}
+        >
+          <Text style={styles.paginationButtonText}>Previous Page</Text>
+        </TouchableOpacity>
+        <Text style={styles.pageNumberText}>Page: {currentPage}</Text>
+        <TouchableOpacity
+          style={[
+            styles.paginationButton,
+            pokemonStore.noMorePokemons && styles.disabledButton,
+          ]}
+          onPress={handleNextPage}
+          disabled={pokemonStore.noMorePokemons || pokemonStore.loading}
+        >
+          <Text style={styles.paginationButtonText}>Next Page</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 });
@@ -129,6 +174,32 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 20,
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#ddd",
+    backgroundColor: "#f8f8f8",
+  },
+  pageNumberText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  paginationButton: {
+    backgroundColor: "#007BFF",
+    padding: 10,
+    borderRadius: 8,
+  },
+  paginationButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  disabledButton: {
+    backgroundColor: "#ddd",
   },
 });
 

@@ -18,6 +18,7 @@ const HomeScreen = observer(() => {
       await pokemonStore.loadCapturedPokemon();
       await pokemonStore.fetchPokemon();
       setInitialized(true); // Set initialized to true after data is loaded
+      pokemonStore.setCurrentPage(1)
     };
     onInit();
   }, []);

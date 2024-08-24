@@ -57,8 +57,8 @@ const FilterSortScreen = observer(() => {
           onValueChange={setSelectedType}
         >
           <Picker.Item label="All" value={undefined} />
-          {pokemonStore.availableTypes.map((type) => (
-            <Picker.Item key={type} label={type} value={type} />
+          {pokemonStore.availableTypes.map((type, index) => (
+            <Picker.Item key={index} label={type} value={type} />
           ))}
         </Picker>
       </View>

@@ -7,6 +7,7 @@ import { Alert } from "react-native";
 
 class PokemonStore implements PokemonStoreInterface {
   pokemonList: Pokemon[] = [];
+  capturePokemonArray: Pokemon[] = [];
   capturedPokemonSet: Set<string> = new Set(); // Use a Set to store captured Pokémon names
   availableTypes: string[] = [];
   loading = false;
@@ -14,6 +15,7 @@ class PokemonStore implements PokemonStoreInterface {
   selectedType: string | undefined = undefined;
   sortOrder: SortByNumber | undefined = undefined;
   searchQuery: string = "";
+  noMorePokemons: boolean = false;
 
   constructor() {
     makeAutoObservable(this, {
@@ -40,6 +42,7 @@ class PokemonStore implements PokemonStoreInterface {
       resetFilters: action,
       loadCapturedPokemon: action,
       updateCapturedStatus: action,
+      setCurrentPage: action,
     });
   }
 
@@ -63,11 +66,12 @@ class PokemonStore implements PokemonStoreInterface {
     this.selectedType = undefined;
     this.sortOrder = undefined;
     this.searchQuery = "";
+    this.currentPage = 0; // Reset to the first page
     await this.fetchPokemon();
   }
 
   generateUniqueId = (pokemon: Pokemon): string => {
-    return `${pokemon.number}_${pokemon.name}`;
+    return `${pokemon.number}_${pokemon.name}_${new Date().getTime()}`;
   };
 
   setLoading(status: boolean) {
@@ -81,7 +85,7 @@ class PokemonStore implements PokemonStoreInterface {
   appendPokemonList(pokeList: Pokemon[]) {
     const newList = pokeList.map((pokemon) => ({
       ...pokemon,
-      id: this.generateUniqueId(pokemon),
+      id: `${pokemon.number}_${pokemon.name}`, // Ensure unique and consistent ID
       captured: this.capturedPokemonSet.has(pokemon.name), // Use captured status from Set
     }));
 
@@ -98,22 +102,20 @@ class PokemonStore implements PokemonStoreInterface {
   fetchPokemon = async (typeFilter?: string, searchQuery?: string) => {
     try {
       this.setLoading(true);
-      let url = "/pokemon";
-      const params: string[] = [];
+      this.currentPage = 0; // Reset to the first page on a new fetch
+      const params: Record<string, string | undefined> = {
+        type: typeFilter || this.selectedType,
+        search: searchQuery || this.sortOrder,
+        page: (this.currentPage + 1).toString(),
+        limit: "20", 
+      };
 
-      if (typeFilter) {
-        params.push(`type=${typeFilter}`);
-      }
-      if (searchQuery) {
-        params.push(`search=${searchQuery}`);
-      }
-      if (params.length > 0) {
-        url += `?${params.join("&")}`;
-      }
+      const response = await axiosInstance.get<Pokemon[]>("/pokemon", {
+        params,
+      });
 
-      const response = await axiosInstance.get<Pokemon[]>(url);
       runInAction(() => {
-        this.appendPokemonList(response.data);
+        this.appendPokemonList(response.data); // Reset the list when fetching new data
         this.setLoading(false);
       });
     } catch (error) {
@@ -126,26 +128,45 @@ class PokemonStore implements PokemonStoreInterface {
 
   async loadCapturedPokemon() {
     try {
-      const response = await axiosInstance.get<string[]>("/captured");
+      const response = await axiosInstance.get<Pokemon[]>("/captured");
+
       runInAction(() => {
-        this.capturedPokemonSet = new Set(response.data);
-        this.capturedPokemonList = response.data;
+        this.capturedPokemonSet.clear();
+        response.data.forEach(pokemon =>
+          this.capturedPokemonSet.add(pokemon.name)
+        );
+        this.capturePokemonArray = response.data;
+        // this.updateCapturedStatus();
       });
     } catch (error) {
       console.error("Failed to load captured Pokémon:", error);
     }
   }
 
+  setCurrentPage(number: number) {
+    this.currentPage = number;
+  }
+
   fetchNextPage = async () => {
     if (this.loading) return;
     this.setLoading(true);
     try {
-      const response = await axiosInstance.get<Pokemon[]>(
-        `/pokemon?page=${this.currentPage + 1}`
-      );
+      const response = await axiosInstance.get<Pokemon[]>("/pokemon", {
+        params: {
+          type: this.selectedType,
+          search: this.sortOrder,
+          page: (this.currentPage + 1).toString(),
+          limit: "20",
+        },
+      });
       runInAction(() => {
-        this.appendPokemonList(response.data);
-        this.currentPage++;
+        if (response.data.length > 0) {
+          this.appendPokemonList(response.data);
+          this.currentPage++;
+          this.noMorePokemons = false;
+        } else {
+          this.noMorePokemons = true;
+        }
         this.setLoading(false);
       });
     } catch (error) {
@@ -255,9 +276,14 @@ class PokemonStore implements PokemonStoreInterface {
     }
   }
 
-  updateCapturedStatus(name: string, captured: boolean) {
+  updateCapturedStatus(name?: string, captured?: boolean) {
     this.pokemonList = this.pokemonList.map((pokemon) =>
-      pokemon.name === name ? { ...pokemon, captured } : pokemon
+      pokemon.name === name
+        ? {
+            ...pokemon,
+            captured: captured ?? this.capturedPokemonSet.has(pokemon.name),
+          }
+        : { ...pokemon, captured: this.capturedPokemonSet.has(pokemon.name) }
     );
   }
 }
