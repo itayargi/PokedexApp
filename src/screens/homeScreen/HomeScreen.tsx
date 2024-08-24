@@ -16,7 +16,8 @@ const HomeScreen = observer(() => {
   useEffect(() => {
     const onInit = async () => {
       await pokemonStore.loadCapturedPokemon();
-      await pokemonStore.fetchPokemon();
+      await pokemonStore.fetchPokemonData(true);
+
       setInitialized(true); // Set initialized to true after data is loaded
       pokemonStore.setCurrentPage(1)
     };

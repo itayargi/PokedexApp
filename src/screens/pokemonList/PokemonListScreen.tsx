@@ -20,14 +20,14 @@ const PokemonListScreen = observer(() => {
 
   const handleNextPage = async () => {
     if (pokemonStore.loading || pokemonStore.noMorePokemons) return;
-    await pokemonStore.fetchNextPage();
+    await pokemonStore.fetchPokemonData();
     setCurrentPage((prev) => prev + 1);
   };
 
   const handlePreviousPage = async () => {
     if (currentPage > 1 && !pokemonStore.loading) {
-      pokemonStore.currentPage -= 2; // Step back two pages because fetchNextPage increments it
-      await pokemonStore.fetchNextPage();
+      pokemonStore.currentPage -= 2; // Step back two pages because fetchPokemonData increments it
+      await pokemonStore.fetchPokemonData();
       setCurrentPage((prev) => prev - 1);
     }
   };

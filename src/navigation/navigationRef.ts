@@ -1,7 +1,6 @@
-import { DrawerActions } from "@react-navigation/native";
 import { createNavigationContainerRef } from "@react-navigation/native";
-import { ScreenName } from "../utils/enum";
 import { AppNavigationParams } from "../types/types";
+import { ScreenName } from "../utils/enum";
 
 export const navigationRef =
   createNavigationContainerRef<AppNavigationParams>();
@@ -30,11 +29,8 @@ export const getCurrentRoute = () => {
   if (!navigationRef.isReady()) {
     return undefined;
   }
-
   let route: any = navigationRef.getRootState();
-
   while ("routes" in route) {
-    // Traverse through the nested routes
     route = route.routes[route.index ?? 0];
   }
 

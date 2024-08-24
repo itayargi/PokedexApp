@@ -1,10 +1,9 @@
-import { Image, StyleSheet, Text, View } from "react-native";
-import React, { useEffect } from "react";
+import { resetAndNavigate } from "@/navigation/navigationRef";
 import { ScreenName } from "@/utils/enum";
 import { wait } from "@/utils/functionUtils";
-import { navigate } from "@/navigation/navigationRef";
 import imageIndex from "assets/images/imageIndex";
-import { pokemonStore } from "@/store/PokemonStore";
+import React, { useEffect } from "react";
+import { Image, StyleSheet, View } from "react-native";
 
 type Props = {};
 
@@ -12,7 +11,7 @@ const Splash = (props: Props) => {
   useEffect(() => {
     const onInit = async () => {
       wait(2000).then(() => {
-        navigate(ScreenName.HomeScreen);
+        resetAndNavigate(ScreenName.HomeScreen);
       });
     };
     onInit();

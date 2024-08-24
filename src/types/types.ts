@@ -20,7 +20,6 @@ export interface Pokemon {
 
 export interface PokemonStoreInterface {
   capturePokemonArray: Pokemon[];
-  // filteredPokemonList: Pokemon[];
   capturedPokemonSet: Set<string>;
   availableTypes: string[];
   loading: boolean;
@@ -30,8 +29,7 @@ export interface PokemonStoreInterface {
   searchQuery: string;
   noMorePokemons: boolean;
 
-  fetchPokemon: (typeFilter?: string, searchQuery?: string) => Promise<void>;
-  fetchNextPage: () => Promise<void>;
+  fetchPokemonData: () => Promise<void>;
   loadCapturedPokemon: () => Promise<void>;
   resetFilters: () => Promise<void>;
   sortPokemonList: (order: SortByNumber) => void;
@@ -45,6 +43,8 @@ export interface PokemonStoreInterface {
 }
 export type AppNavigationParams = {
   [ScreenName.Splash]: undefined;
+  [ScreenName.FilterSort]: undefined;
+  [ScreenName.HomeScreen]: undefined;
   [ScreenName.PokemonList]: undefined;
   [ScreenName.CapturedPokemon]: undefined;
 };

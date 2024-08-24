@@ -7,7 +7,7 @@ import { Alert } from "react-native";
 
 class PokemonStore implements PokemonStoreInterface {
   pokemonList: Pokemon[] = [];
-  capturePokemonArray: Pokemon[] = [];
+  capturePokemonArray: Pokemon[] = []; // Store full captured Pokemon objects
   capturedPokemonSet: Set<string> = new Set(); // Use a Set to store captured Pokémon names
   availableTypes: string[] = [];
   loading = false;
@@ -26,9 +26,9 @@ class PokemonStore implements PokemonStoreInterface {
       selectedType: observable,
       sortOrder: observable,
       searchQuery: observable,
-      fetchPokemon: action,
+      capturePokemonArray: observable,
       setPokemonList: action,
-      fetchNextPage: action,
+      fetchPokemonData: action,
       sortPokemonList: action,
       filterPokemonList: action,
       markAsCaptured: action,
@@ -66,8 +66,8 @@ class PokemonStore implements PokemonStoreInterface {
     this.selectedType = undefined;
     this.sortOrder = undefined;
     this.searchQuery = "";
-    this.currentPage = 0; // Reset to the first page
-    await this.fetchPokemon();
+    this.currentPage = 0;
+    await this.fetchPokemonData(true);
   }
 
   generateUniqueId = (pokemon: Pokemon): string => {
@@ -99,44 +99,17 @@ class PokemonStore implements PokemonStoreInterface {
     this.setAvailableTypes(types);
   }
 
-  fetchPokemon = async (typeFilter?: string, searchQuery?: string) => {
-    try {
-      this.setLoading(true);
-      this.currentPage = 0; // Reset to the first page on a new fetch
-      const params: Record<string, string | undefined> = {
-        type: typeFilter || this.selectedType,
-        search: searchQuery || this.sortOrder,
-        page: (this.currentPage + 1).toString(),
-        limit: "20", 
-      };
-
-      const response = await axiosInstance.get<Pokemon[]>("/pokemon", {
-        params,
-      });
-
-      runInAction(() => {
-        this.appendPokemonList(response.data); // Reset the list when fetching new data
-        this.setLoading(false);
-      });
-    } catch (error) {
-      console.error("Failed to fetch Pokémon data:", error);
-      runInAction(() => {
-        this.setLoading(false);
-      });
-    }
-  };
-
   async loadCapturedPokemon() {
     try {
       const response = await axiosInstance.get<Pokemon[]>("/captured");
 
       runInAction(() => {
         this.capturedPokemonSet.clear();
-        response.data.forEach(pokemon =>
+        response.data.forEach((pokemon) =>
           this.capturedPokemonSet.add(pokemon.name)
         );
         this.capturePokemonArray = response.data;
-        // this.updateCapturedStatus();
+        this.updateCapturedStatus();
       });
     } catch (error) {
       console.error("Failed to load captured Pokémon:", error);
@@ -147,35 +120,43 @@ class PokemonStore implements PokemonStoreInterface {
     this.currentPage = number;
   }
 
-  fetchNextPage = async () => {
-    if (this.loading) return;
-    this.setLoading(true);
+  async fetchPokemonData(resetList = false) {
     try {
+      this.setLoading(true);
+
+      // Reset current page if we're resetting the list
+      if (resetList) {
+        this.currentPage = 0;
+      }
+
+      const params: Record<string, string | undefined> = {
+        type: this.selectedType,
+        search: this.searchQuery,
+        page: (this.currentPage + 1).toString(),
+        limit: "20",
+      };
+
       const response = await axiosInstance.get<Pokemon[]>("/pokemon", {
-        params: {
-          type: this.selectedType,
-          search: this.sortOrder,
-          page: (this.currentPage + 1).toString(),
-          limit: "20",
-        },
+        params,
       });
       runInAction(() => {
         if (response.data.length > 0) {
-          this.appendPokemonList(response.data);
+          // Increment the page only if data is fetched
           this.currentPage++;
-          this.noMorePokemons = false;
+          this.appendPokemonList(response.data);
+          this.noMorePokemons = false; // More data might be available
         } else {
-          this.noMorePokemons = true;
+          this.noMorePokemons = true; // No more data available
         }
         this.setLoading(false);
       });
     } catch (error) {
-      console.error("Failed to fetch next page of Pokémon:", error);
+      console.error("Failed to fetch Pokémon data:", error);
       runInAction(() => {
         this.setLoading(false);
       });
     }
-  };
+  }
 
   sortPokemonList = (order: SortByNumber) => {
     runInAction(() => {
@@ -197,14 +178,21 @@ class PokemonStore implements PokemonStoreInterface {
 
   async markAsCaptured(pokemon: Pokemon) {
     try {
-      await axiosInstance.post("/capture", { name: pokemon.name });
-      runInAction(() => {
-        if (!this.capturedPokemonSet.has(pokemon.name)) {
-          this.capturedPokemonSet.add(pokemon.name);
-          this.updateCapturedStatus(pokemon.name, true);
-        }
-      });
+      this.setLoading(true);
+      const res = await axiosInstance.post("/capture", { name: pokemon.name });
+      if (res.status === 200) {
+        runInAction(() => {
+          if (!this.capturedPokemonSet.has(pokemon.name)) {
+            this.capturedPokemonSet.add(pokemon.name);
+            this.updateCapturedStatus(pokemon.name, true);
+            this.capturePokemonArray = [...this.capturePokemonArray, pokemon];
+          }
+          this.setLoading(false);
+        });
+        
+      }
     } catch (error) {
+      this.setLoading(false);
       console.error("Failed to mark Pokémon as captured on server:", error);
     }
   }
@@ -248,31 +236,42 @@ class PokemonStore implements PokemonStoreInterface {
   }
 
   async releasePokemon(pokemon: Pokemon) {
-    const contacts = await Contacts.getContactsAsync({
-      fields: [Contacts.Fields.Name],
-    });
+    try {
+      // First, remove the Pokémon from the contacts
+      const contacts = await Contacts.getContactsAsync({
+        fields: [Contacts.Fields.Name],
+      });
 
-    const contact = contacts.data.find((c) => c.name === pokemon.name);
-    if (contact && contact.id) {
-      try {
+      const contact = contacts.data.find((c) => c.name === pokemon.name);
+      if (contact && contact.id) {
         await Contacts.removeContactAsync(contact.id);
+      }
+
+      // Then, update the captured status on the server
+      const res = await axiosInstance.post("/release", { name: pokemon.name });
+      if (res.status === 200) {
         runInAction(() => {
-          this.capturedPokemonSet.delete(pokemon.name);
+          // Remove the Pokémon from the captured set locally
+          if (this.capturedPokemonSet.has(pokemon.name)) {
+            this.capturedPokemonSet.delete(pokemon.name);
+          }
+
+          // Update the captured Pokemon array to reflect the release
+          this.capturePokemonArray = this.capturePokemonArray.filter(
+            (p) => p.name !== pokemon.name
+          );
+
+          // Update the status in the list of all Pokémon
           this.updateCapturedStatus(pokemon.name, false);
         });
         Alert.alert(
           "Released",
-          `${pokemon.name} has been removed from your contacts.`
+          `${pokemon.name} has been removed from your contacts and released.`
         );
-      } catch (error) {
-        console.error("Failed to release contact:", error);
-        Alert.alert("Error", "Failed to release contact.");
       }
-    } else {
-      Alert.alert(
-        "Not Found",
-        `${pokemon.name} is not found in your contacts.`
-      );
+    } catch (error) {
+      console.error("Failed to release Pokémon:", error);
+      Alert.alert("Error", "Failed to release Pokémon.");
     }
   }
 

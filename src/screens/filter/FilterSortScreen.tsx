@@ -30,7 +30,7 @@ const FilterSortScreen = observer(() => {
     pokemonStore.setSortOrder(sortOrder);
     pokemonStore.setSearchQuery(searchQuery);
 
-    await pokemonStore.fetchPokemon(selectedType, searchQuery);
+    await pokemonStore.fetchPokemonData(true);
     if (sortOrder) {
       pokemonStore.sortPokemonList(sortOrder);
     }
