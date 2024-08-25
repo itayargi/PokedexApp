@@ -1,4 +1,4 @@
-import { ErrorType, ScreenName, SortByNumber } from "../utils/enum";
+import { ScreenName, ServiceName, SortByNumber } from "../utils/enum";
 
 export interface Pokemon {
   captured: boolean;
@@ -28,9 +28,8 @@ export interface PokemonStoreInterface {
   sortOrder: SortByNumber | undefined;
   searchQuery: string;
   noMorePokemons: boolean;
-  requestsError: IError;
+  requestsError: IErrorState | null;
 
-  fetchPokemonData: () => Promise<void>;
   loadCapturedPokemon: () => Promise<void>;
   resetFilters: () => Promise<void>;
   sortPokemonList: (order: SortByNumber) => void;
@@ -49,9 +48,11 @@ export type AppNavigationParams = {
   [ScreenName.PokemonList]: undefined;
   [ScreenName.CapturedPokemon]: undefined;
 };
+export type IErrorState = {
+  [key in ServiceName]: IError | null;
+};
 export type IError = {
-  [key in ErrorType]: {
-    title: string;
-    subTitle?: string;
-  };
+  title: string;
+  subTitle?: string;
+  serviceName: ServiceName;
 };
