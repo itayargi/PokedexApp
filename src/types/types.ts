@@ -1,4 +1,4 @@
-import { ScreenName, SortByNumber } from "../utils/enum";
+import { ErrorType, ScreenName, SortByNumber } from "../utils/enum";
 
 export interface Pokemon {
   captured: boolean;
@@ -28,6 +28,7 @@ export interface PokemonStoreInterface {
   sortOrder: SortByNumber | undefined;
   searchQuery: string;
   noMorePokemons: boolean;
+  requestsError: IError;
 
   fetchPokemonData: () => Promise<void>;
   loadCapturedPokemon: () => Promise<void>;
@@ -47,4 +48,10 @@ export type AppNavigationParams = {
   [ScreenName.HomeScreen]: undefined;
   [ScreenName.PokemonList]: undefined;
   [ScreenName.CapturedPokemon]: undefined;
+};
+export type IError = {
+  [key in ErrorType]: {
+    title: string;
+    subTitle?: string;
+  };
 };

@@ -30,7 +30,7 @@ const FilterSortScreen = observer(() => {
     pokemonStore.setSortOrder(sortOrder);
     pokemonStore.setSearchQuery(searchQuery);
 
-    await pokemonStore.fetchPokemonData(true);
+    await pokemonStore.getPokemons(1);
     if (sortOrder) {
       pokemonStore.sortPokemonList(sortOrder);
     }
@@ -43,6 +43,7 @@ const FilterSortScreen = observer(() => {
     setSelectedType(undefined);
     setSortOrder(undefined);
     setSearchQuery("");
+    // pokemonStore.getPokemons(0);
   };
 
   return (
@@ -56,7 +57,7 @@ const FilterSortScreen = observer(() => {
           style={styles.picker}
           onValueChange={setSelectedType}
         >
-          <Picker.Item label="All" value={undefined} />
+          <Picker.Item label="All" value={''} />
           {pokemonStore.availableTypes.map((type, index) => (
             <Picker.Item key={index} label={type} value={type} />
           ))}

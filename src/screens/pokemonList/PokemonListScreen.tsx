@@ -16,19 +16,31 @@ import ImageComponent from "@/components/image/ImageComponent";
 
 const PokemonListScreen = observer(() => {
   const flatListRef = useRef<FlatList>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+
+  const currentPage = pokemonStore.currentPage;
+  const isNextBtnDisabled =
+    pokemonStore.pokemonList.length < 20 ||
+    pokemonStore.noMorePokemons ||
+    pokemonStore.loading;
+  const isPriviousDisabled =
+    (currentPage === 1 && !pokemonStore.noMorePokemons) || pokemonStore.loading;
+  // Scroll to the top when currentPage changes
+  React.useEffect(() => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, [currentPage]);
 
   const handleNextPage = async () => {
     if (pokemonStore.loading || pokemonStore.noMorePokemons) return;
-    await pokemonStore.fetchPokemonData();
-    setCurrentPage((prev) => prev + 1);
+    await pokemonStore.getPokemons();
+    // pokemonStore.setCurrentPage(pokemonStore.currentPage + 1);
   };
 
   const handlePreviousPage = async () => {
     if (currentPage > 1 && !pokemonStore.loading) {
-      pokemonStore.currentPage -= 2; // Step back two pages because fetchPokemonData increments it
-      await pokemonStore.fetchPokemonData();
-      setCurrentPage((prev) => prev - 1);
+      // pokemonStore.currentPage -= 2; // Step back two pages because fetchPokemonData increments it
+      // await pokemonStore.fetchPokemonData();
+      await pokemonStore.getPokemons(pokemonStore.currentPage - 1);
+      // pokemonStore.setCurrentPage(pokemonStore.currentPage - 1);
     }
   };
 
@@ -81,14 +93,19 @@ const PokemonListScreen = observer(() => {
       <FlatList
         ref={flatListRef}
         data={pokemonStore.pokemonList}
-        keyExtractor={(item) => item.id} 
+        keyExtractor={(item) => item.id}
         renderItem={renderItem}
         bounces={false}
         initialNumToRender={10}
         showsVerticalScrollIndicator={false}
-        windowSize={5} 
-        maxToRenderPerBatch={10} 
-        updateCellsBatchingPeriod={50} 
+        windowSize={5}
+        ListEmptyComponent={() => (
+          <View>
+            <Text style={{ textAlign: "center" }}>No Posts</Text>
+          </View>
+        )}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
         contentContainerStyle={styles.listContent}
       />
 
@@ -97,10 +114,10 @@ const PokemonListScreen = observer(() => {
         <TouchableOpacity
           style={[
             styles.paginationButton,
-            currentPage === 1 && styles.disabledButton,
+            isPriviousDisabled && styles.disabledButton,
           ]}
           onPress={handlePreviousPage}
-          disabled={currentPage === 1 || pokemonStore.loading}
+          disabled={isPriviousDisabled}
         >
           <Text style={styles.paginationButtonText}>Previous Page</Text>
         </TouchableOpacity>
@@ -108,10 +125,10 @@ const PokemonListScreen = observer(() => {
         <TouchableOpacity
           style={[
             styles.paginationButton,
-            pokemonStore.noMorePokemons && styles.disabledButton,
+            isNextBtnDisabled && styles.disabledButton,
           ]}
           onPress={handleNextPage}
-          disabled={pokemonStore.noMorePokemons || pokemonStore.loading}
+          disabled={isNextBtnDisabled}
         >
           <Text style={styles.paginationButtonText}>Next Page</Text>
         </TouchableOpacity>

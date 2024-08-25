@@ -1,6 +1,6 @@
 import { makeAutoObservable, action, runInAction, observable } from "mobx";
 import axiosInstance from "../api/interceptor";
-import { Pokemon, PokemonStoreInterface } from "../types/types";
+import { IError, Pokemon, PokemonStoreInterface } from "../types/types";
 import { SortByNumber } from "@/utils/enum";
 import * as Contacts from "expo-contacts";
 import { Alert } from "react-native";
@@ -16,7 +16,7 @@ class PokemonStore implements PokemonStoreInterface {
   sortOrder: SortByNumber | undefined = undefined;
   searchQuery: string = "";
   noMorePokemons: boolean = false;
-
+  requestsError = {} as IError;
   constructor() {
     makeAutoObservable(this, {
       loading: observable,
@@ -27,6 +27,7 @@ class PokemonStore implements PokemonStoreInterface {
       sortOrder: observable,
       searchQuery: observable,
       capturePokemonArray: observable,
+      requestsError: observable,
       setPokemonList: action,
       fetchPokemonData: action,
       sortPokemonList: action,
@@ -63,11 +64,11 @@ class PokemonStore implements PokemonStoreInterface {
   }
 
   async resetFilters() {
-    this.selectedType = undefined;
+    this.selectedType = "";
     this.sortOrder = undefined;
     this.searchQuery = "";
-    this.currentPage = 0;
-    await this.fetchPokemonData(true);
+    // this.setCurrentPage(1);
+    // await this.fetchPokemonData(true);
   }
 
   generateUniqueId = (pokemon: Pokemon): string => {
@@ -102,7 +103,6 @@ class PokemonStore implements PokemonStoreInterface {
   async loadCapturedPokemon() {
     try {
       const response = await axiosInstance.get<Pokemon[]>("/captured");
-
       runInAction(() => {
         this.capturedPokemonSet.clear();
         response.data.forEach((pokemon) =>
@@ -119,14 +119,52 @@ class PokemonStore implements PokemonStoreInterface {
   setCurrentPage(number: number) {
     this.currentPage = number;
   }
+  async getPokemons(page?: number) {
+    try {
+      this.setLoading(true);
+      const params: Record<string, string | undefined> = {
+        type: this.selectedType,
+        search: this.searchQuery,
+        page: page?.toString() || (this.currentPage + 1).toString(),
+        limit: "20",
+      };
+      const response = await axiosInstance.get<Pokemon[]>("/pokemon", {
+        params,
+      });
+      runInAction(() => {
+        this.setCurrentPage(page !== undefined ? page : this.currentPage + 1);
 
+        if (response.data.length > 0) {
+          this.appendPokemonList(response.data);
+          this.noMorePokemons = false; // More data might be available
+        } else {
+          this.noMorePokemons = true; // No more data available
+          this.appendPokemonList(response.data);
+          // this.currentPage--;
+          // this.setCurrentPage(1);
+        }
+        this.setLoading(false);
+      });
+    } catch (error) {
+      console.error("Failed to fetch Pokémon data:", error);
+      runInAction(() => {
+        this.setLoading(false);
+      });
+    }
+  }
+  async getPokemonAndCaptured() {
+    this.setLoading(true);
+    await pokemonStore.loadCapturedPokemon();
+    await pokemonStore.getPokemons();
+    this.setLoading(false);
+  }
   async fetchPokemonData(resetList = false) {
     try {
       this.setLoading(true);
 
       // Reset current page if we're resetting the list
       if (resetList) {
-        this.currentPage = 0;
+        this.setCurrentPage(1);
       }
 
       const params: Record<string, string | undefined> = {
@@ -142,7 +180,7 @@ class PokemonStore implements PokemonStoreInterface {
       runInAction(() => {
         if (response.data.length > 0) {
           // Increment the page only if data is fetched
-          this.currentPage++;
+          // this.currentPage++;
           this.appendPokemonList(response.data);
           this.noMorePokemons = false; // More data might be available
         } else {
@@ -189,7 +227,6 @@ class PokemonStore implements PokemonStoreInterface {
           }
           this.setLoading(false);
         });
-        
       }
     } catch (error) {
       this.setLoading(false);
