@@ -1,7 +1,7 @@
 import React, { useState, useEffect, memo } from "react";
-import { Image, Text, View } from "react-native";
+import { Image, ImageStyle, StyleProp, Text, View } from "react-native";
 
-const ImageComponent = ({ name }: { name: string }) => {
+const ImageComponent = ({ name, style }: { name: string, style?:StyleProp<ImageStyle> }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ const ImageComponent = ({ name }: { name: string }) => {
   return (
     <Image
       source={{ uri: imageUrl }}
-      style={{ width: 60, height: 60, marginHorizontal: 10 }}
+      style={[{ width: 60, height: 60, marginHorizontal: 10 }, style]}
     />
   );
 };

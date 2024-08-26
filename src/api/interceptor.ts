@@ -7,13 +7,12 @@ const axiosInstance = axios.create({
   timeout: 5000,
   headers: {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*", // Allow all origins for CORS
+    "Access-Control-Allow-Origin": "*", 
   },
 });
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    // You can add more headers here if needed, such as Authorization tokens
     config.headers["Access-Control-Allow-Headers"] =
       "Origin, X-Requested-With, Content-Type, Accept";
     config.headers["Access-Control-Allow-Methods"] =
@@ -31,11 +30,8 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle 401 Unauthorized globally, for example, redirect to login
+    // Handle 401 Unauthorized globally
     if (error.response && error.response.status === 401) {
-      // Redirect to login or refresh token logic
-      console.warn("Unauthorized access - redirecting to login");
-      // window.location.href = '/login'; // Example redirect
     }
 
     // Log and rethrow the error

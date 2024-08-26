@@ -26,8 +26,8 @@ const HomeScreen = observer(() => {
     //render homescreen loader
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#007BFF" />
-        <Text>Loading Pokémon...</Text>
+        {/* <ActivityIndicator size="large" color="#007BFF" /> */}
+        <Text>{strings.homeScreen_initLoader}</Text>
       </View>
     );
   }

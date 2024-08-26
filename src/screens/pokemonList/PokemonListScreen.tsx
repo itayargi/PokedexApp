@@ -16,6 +16,7 @@ import { ScreenName } from "@/utils/enum";
 import ImageComponent from "@/components/image/ImageComponent";
 import imageIndex from "assets/images/imageIndex";
 import { sizes } from "@/utils/functionUtils";
+import strings from "@/utils/strings";
 
 const PokemonListScreen = observer(() => {
   const flatListRef = useRef<FlatList>(null);
@@ -25,7 +26,9 @@ const PokemonListScreen = observer(() => {
     pokemonStore.noMorePokemons ||
     pokemonStore.loading;
   const isPriviousDisabled =
-    (currentPage <= 1 && !pokemonStore.noMorePokemons) || pokemonStore.loading;
+    pokemonStore.pokemonList.length === 0 ||
+    (currentPage <= 1 && !pokemonStore.noMorePokemons) ||
+    pokemonStore.loading;
   // Scroll to the top when currentPage changes
   React.useEffect(() => {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
@@ -49,13 +52,21 @@ const PokemonListScreen = observer(() => {
         <View style={styles.pokemonDetails}>
           <Text style={styles.pokemonName}>{item.name}</Text>
           <Text>
-            Type: {item.type_one}
+            {strings.pokemone_type} {item.type_one}
             {item.type_two ? ` / ${item.type_two}` : ""}
           </Text>
-          <Text>Number: {item.number}</Text>
-          <Text>HP: {item.hit_points}</Text>
-          <Text>Attack: {item.attack}</Text>
-          <Text>Defense: {item.defense}</Text>
+          <Text>
+            {strings.pokemone_number} {item.number}
+          </Text>
+          <Text>
+            {strings.pokemone_hp} {item.hit_points}
+          </Text>
+          <Text>
+            {strings.pokemone_attack} {item.attack}
+          </Text>
+          <Text>
+            {strings.pokemone_defence} {item.defense}
+          </Text>
           <TouchableOpacity
             style={[
               styles.captureButton,
@@ -83,7 +94,7 @@ const PokemonListScreen = observer(() => {
       </>
     ) : (
       <>
-        <Text>No posts...</Text>
+        <Text style={styles.noPosts}>{strings.no_posts}</Text>
       </>
     );
   };
@@ -94,7 +105,7 @@ const PokemonListScreen = observer(() => {
           style={styles.headerButton}
           onPress={() => navigate(ScreenName.FilterSort)}
         >
-          <Text style={styles.headerButtonText}>Filter and Sort</Text>
+          <Text style={styles.headerButtonText}>{strings.filter_btn_text}</Text>
         </TouchableOpacity>
       </View>
 
@@ -123,9 +134,13 @@ const PokemonListScreen = observer(() => {
           onPress={handlePreviousPage}
           disabled={isPriviousDisabled}
         >
-          <Text style={styles.paginationButtonText}>Previous Page</Text>
+          <Text style={styles.paginationButtonText}>
+            {strings.previous_page_btn}
+          </Text>
         </TouchableOpacity>
-        <Text style={styles.pageNumberText}>Page: {currentPage}</Text>
+        <Text style={styles.pageNumberText}>
+          {strings.page} {currentPage}
+        </Text>
         <TouchableOpacity
           style={[
             styles.paginationButton,
@@ -134,7 +149,9 @@ const PokemonListScreen = observer(() => {
           onPress={handleNextPage}
           disabled={isNextBtnDisabled}
         >
-          <Text style={styles.paginationButtonText}>Next Page</Text>
+          <Text style={styles.paginationButtonText}>
+            {strings.next_page_btn}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -223,8 +240,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#ddd",
   },
   error: {
-    width:'100%',
-    height:sizes.pageHeight * 0.5,
+    width: "100%",
+    height: sizes.pageHeight * 0.5,
+  },
+  noPosts: {
+    textAlign: "center",
+    fontSize: 18,
   },
 });
 

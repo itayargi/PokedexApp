@@ -166,6 +166,7 @@ class PokemonStore implements PokemonStoreInterface {
       const response = await axiosInstance.get<Pokemon[]>("/pokemon", {
         params,
       });
+
       runInAction(() => {
         this.setCurrentPage(page !== undefined ? page : this.currentPage + 1);
         this.clearErrorByService(ServiceName.GetPokemons);
@@ -174,6 +175,8 @@ class PokemonStore implements PokemonStoreInterface {
           this.noMorePokemons = false;
         } else {
           this.noMorePokemons = true;
+          this.appendPokemonList(response.data);
+
         }
         this.setLoading(false);
       });

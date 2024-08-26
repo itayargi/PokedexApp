@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  ScrollView,
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { pokemonStore } from "@/store/PokemonStore";
@@ -47,7 +48,7 @@ const FilterSortScreen = observer(() => {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
       <Text style={styles.title}>Filter Pokémon</Text>
 
       <View style={styles.dropdownContainer}>
@@ -110,13 +111,13 @@ const FilterSortScreen = observer(() => {
           <Text style={styles.buttonText}>Apply and Go Back</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 });
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 20,
     backgroundColor: "#f0f0f0",
   },
