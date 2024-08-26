@@ -1,4 +1,5 @@
 import { resetAndNavigate } from "@/navigation/navigationRef";
+import { pokemonStore } from "@/store/PokemonStore";
 import { ScreenName } from "@/utils/enum";
 import { wait } from "@/utils/functionUtils";
 import imageIndex from "assets/images/imageIndex";
@@ -10,6 +11,7 @@ type Props = {};
 const Splash = (props: Props) => {
   useEffect(() => {
     const onInit = async () => {
+      await pokemonStore.loadCurrentPage();
       wait(2000).then(() => {
         resetAndNavigate(ScreenName.HomeScreen);
       });

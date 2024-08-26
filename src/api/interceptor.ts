@@ -1,5 +1,6 @@
 import axios from "axios";
 import { BASE_URL } from "./urls";
+import { logDev } from "@/utils/functionUtils";
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -22,7 +23,7 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error("Request error:", error);
+    logDev("Request error:", error);
     return Promise.reject(error);
   }
 );
@@ -38,7 +39,7 @@ axiosInstance.interceptors.response.use(
     }
 
     // Log and rethrow the error
-    console.error("API response error:", error);
+    logDev("API response error:", error);
     return Promise.reject(error);
   }
 );

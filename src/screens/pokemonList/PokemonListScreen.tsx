@@ -5,6 +5,7 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { pokemonStore } from "@/store/PokemonStore";
@@ -13,17 +14,18 @@ import { globalStyles } from "@/styles";
 import { navigate } from "@/navigation/navigationRef";
 import { ScreenName } from "@/utils/enum";
 import ImageComponent from "@/components/image/ImageComponent";
+import imageIndex from "assets/images/imageIndex";
+import { sizes } from "@/utils/functionUtils";
 
 const PokemonListScreen = observer(() => {
   const flatListRef = useRef<FlatList>(null);
-
   const currentPage = pokemonStore.currentPage;
   const isNextBtnDisabled =
     pokemonStore.pokemonList.length < 20 ||
     pokemonStore.noMorePokemons ||
     pokemonStore.loading;
   const isPriviousDisabled =
-    (currentPage === 1 && !pokemonStore.noMorePokemons) || pokemonStore.loading;
+    (currentPage <= 1 && !pokemonStore.noMorePokemons) || pokemonStore.loading;
   // Scroll to the top when currentPage changes
   React.useEffect(() => {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
@@ -32,15 +34,11 @@ const PokemonListScreen = observer(() => {
   const handleNextPage = async () => {
     if (pokemonStore.loading || pokemonStore.noMorePokemons) return;
     await pokemonStore.getPokemons();
-    // pokemonStore.setCurrentPage(pokemonStore.currentPage + 1);
   };
 
   const handlePreviousPage = async () => {
     if (currentPage > 1 && !pokemonStore.loading) {
-      // pokemonStore.currentPage -= 2; // Step back two pages because fetchPokemonData increments it
-      // await pokemonStore.fetchPokemonData();
       await pokemonStore.getPokemons(pokemonStore.currentPage - 1);
-      // pokemonStore.setCurrentPage(pokemonStore.currentPage - 1);
     }
   };
 
@@ -78,7 +76,17 @@ const PokemonListScreen = observer(() => {
     ),
     []
   );
-
+  const EmptyComponent = () => {
+    return pokemonStore.requestsError.GetPokemons?.title ? (
+      <>
+        <Image source={imageIndex.error()} style={styles.error} />
+      </>
+    ) : (
+      <>
+        <Text>No posts...</Text>
+      </>
+    );
+  };
   return (
     <View style={globalStyles.container}>
       <View style={styles.headerButtonsContainer}>
@@ -99,11 +107,7 @@ const PokemonListScreen = observer(() => {
         initialNumToRender={10}
         showsVerticalScrollIndicator={false}
         windowSize={5}
-        ListEmptyComponent={() => (
-          <View>
-            <Text style={{ textAlign: "center" }}>No Posts</Text>
-          </View>
-        )}
+        ListEmptyComponent={EmptyComponent}
         maxToRenderPerBatch={10}
         updateCellsBatchingPeriod={50}
         contentContainerStyle={styles.listContent}
@@ -217,6 +221,10 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: "#ddd",
+  },
+  error: {
+    width:'100%',
+    height:sizes.pageHeight * 0.5,
   },
 });
 
