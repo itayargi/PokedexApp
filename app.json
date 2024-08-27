@@ -4,7 +4,7 @@
     "slug": "PokedexApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "jsEngine": "hermes",  
+    "jsEngine": "hermes",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -23,6 +23,17 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e551db80-118f-432f-af69-399d73b7161d"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e551db80-118f-432f-af69-399d73b7161d"
     }
   }
 }
