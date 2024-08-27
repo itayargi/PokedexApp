@@ -3,7 +3,10 @@ import {
   NavigationContainer,
   NavigationContainerRef,
 } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
+import {
+  createStackNavigator,
+  StackNavigationOptions,
+} from "@react-navigation/stack";
 import { ScreenName } from "../utils/enum";
 import Splash from "../screens/splash/Splash";
 import PokemonListScreen from "../screens/pokemonList/PokemonListScreen";
@@ -14,11 +17,17 @@ import { View } from "react-native";
 import HomeScreen from "@/screens/homeScreen/HomeScreen";
 
 const Stack = createStackNavigator();
+const screenParams: StackNavigationOptions = {
+  headerTitleAlign: "center", // Center the header title
+};
 
 const AppNavigator = () => (
   <NavigationContainer ref={navigationRef}>
-    <Stack.Navigator screenOptions={{}} initialRouteName={ScreenName.Splash}>
-      <Stack.Screen name={ScreenName.Splash} component={Splash} />
+    <Stack.Navigator
+      screenOptions={screenParams}
+      initialRouteName={ScreenName.Splash}
+    >
+      <Stack.Screen options={{headerShown:false}} name={ScreenName.Splash} component={Splash} />
       <Stack.Screen
         name={ScreenName.FilterSort}
         component={FilterSortScreen}

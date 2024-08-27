@@ -1,4 +1,4 @@
-import { Dimensions } from "react-native";
+import { Dimensions, Platform } from "react-native";
 
 export const wait = (timeout: number) => {
   return new Promise((resolve) => {
@@ -10,6 +10,8 @@ export const logDev = (...args: any[]): void => {
 };
 
 export const sizes = {
-  pageWidth: Dimensions.get('window').width,
-  pageHeight: Dimensions.get('window').height,
+  pageWidth: Dimensions.get("window").width,
+  pageHeight: Dimensions.get("window").height,
 };
+
+export const IS_IOS = Platform.OS === "ios";

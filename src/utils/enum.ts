@@ -19,3 +19,7 @@ export enum ServiceName {
 export enum AsyncStorageItem {
   CURRENT_PAGE_KEY = 'CURRENT_PAGE_KEY'
 }
+export enum PokemonStatus {
+  Catch = 'Catch',
+  Release = 'Release'
+}

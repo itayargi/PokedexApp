@@ -12,6 +12,7 @@ import { pokemonStore } from "@/store/PokemonStore";
 import { Picker } from "@react-native-picker/picker";
 import { goBack } from "@/navigation/navigationRef";
 import { SortByNumber } from "@/utils/enum";
+import { IS_IOS } from "@/utils/functionUtils";
 
 const FilterSortScreen = observer(() => {
   // Local state to temporarily store the user's choices
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   picker: {
-    height: 180,
+    height:IS_IOS ?  180 : 80,
     width: "100%",
   },
   searchInput: {

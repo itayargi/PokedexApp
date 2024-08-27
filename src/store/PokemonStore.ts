@@ -14,16 +14,25 @@ import { logDev } from "@/utils/functionUtils";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 class PokemonStore implements PokemonStoreInterface {
+  // store all pokemon
   pokemonList: Pokemon[] = [];
+  //user captured pokemons
   capturePokemonArray: Pokemon[] = [];
+  // using set for better performances
   capturedPokemonSet: Set<string> = new Set();
+  // all the types from current pokemonList
   availableTypes: string[] = [];
+  // app loader
   loading = false;
+  // current screen in PokemonListScreen
   currentPage: number = 0;
+  // filter properties
   selectedType: string | undefined = undefined;
   sortOrder: SortByNumber | undefined = undefined;
   searchQuery: string = "";
+  //flag for disableling next page btn
   noMorePokemons: boolean = false;
+  // handlnig errors
   requestsError: IErrorState = {} as IErrorState;
 
   constructor() {
@@ -260,10 +269,6 @@ class PokemonStore implements PokemonStoreInterface {
       );
       if (contactId) {
         this.markAsCaptured(pokemon);
-        Alert.alert(
-          "Success",
-          `${pokemon.name} has been added to your contacts.`
-        );
       }
     } catch (error) {
       this.handleRequestError(ServiceName.SaveAsContact, error);
@@ -285,20 +290,15 @@ class PokemonStore implements PokemonStoreInterface {
       const res = await axiosInstance.post("/release", { name: pokemon.name });
       if (res.status === 200) {
         runInAction(() => {
+          //remove pokemons from the set and array
           if (this.capturedPokemonSet.has(pokemon.name)) {
             this.capturedPokemonSet.delete(pokemon.name);
           }
-
           this.capturePokemonArray = this.capturePokemonArray.filter(
             (p) => p.name !== pokemon.name
           );
-
           this.updateCapturedStatus(pokemon.name, false);
         });
-        Alert.alert(
-          "Released",
-          `${pokemon.name} has been removed from your contacts and released.`
-        );
       }
     } catch (error) {
       this.handleRequestError(ServiceName.ReleasePokemon, error);

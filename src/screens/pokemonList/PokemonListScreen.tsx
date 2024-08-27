@@ -12,11 +12,14 @@ import { pokemonStore } from "@/store/PokemonStore";
 import { Pokemon } from "@/types/types";
 import { globalStyles } from "@/styles";
 import { navigate } from "@/navigation/navigationRef";
-import { ScreenName } from "@/utils/enum";
+import { PokemonStatus, ScreenName } from "@/utils/enum";
 import ImageComponent from "@/components/image/ImageComponent";
 import imageIndex from "assets/images/imageIndex";
 import { sizes } from "@/utils/functionUtils";
 import strings from "@/utils/strings";
+import ActionButton from "@/components/buttons/ActionButton";
+import { LinearGradient } from "expo-linear-gradient";
+import colors from "@/utils/colors";
 
 const PokemonListScreen = observer(() => {
   const flatListRef = useRef<FlatList>(null);
@@ -67,21 +70,17 @@ const PokemonListScreen = observer(() => {
           <Text>
             {strings.pokemone_defence} {item.defense}
           </Text>
-          <TouchableOpacity
-            style={[
-              styles.captureButton,
-              item.captured && styles.releaseButton,
-            ]}
+          <ActionButton
+            title={item.captured ? PokemonStatus.Release : PokemonStatus.Catch}
+            colors={
+              item.captured ? colors.releaseGradient : colors.catchGradient
+            }
             onPress={() =>
               item.captured
                 ? pokemonStore.releasePokemon(item)
                 : pokemonStore.saveAsContact(item)
             }
-          >
-            <Text style={styles.captureButtonText}>
-              {item.captured ? "Release" : "Catch"}
-            </Text>
-          </TouchableOpacity>
+          />
         </View>
       </View>
     ),
@@ -99,15 +98,15 @@ const PokemonListScreen = observer(() => {
     );
   };
   return (
-    <View style={globalStyles.container}>
-      <View style={styles.headerButtonsContainer}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => navigate(ScreenName.FilterSort)}
+    <View style={[globalStyles.container, { paddingTop: 0 }]}>
+      <TouchableOpacity onPress={() => navigate(ScreenName.FilterSort)}>
+        <LinearGradient
+          colors={colors.filterGradient}
+          style={styles.headerButtonsContainer}
         >
           <Text style={styles.headerButtonText}>{strings.filter_btn_text}</Text>
-        </TouchableOpacity>
-      </View>
+        </LinearGradient>
+      </TouchableOpacity>
 
       <FlatList
         ref={flatListRef}
@@ -161,20 +160,17 @@ const PokemonListScreen = observer(() => {
 const styles = StyleSheet.create({
   headerButtonsContainer: {
     alignItems: "center",
-    height: 40,
-    marginBottom: 20,
-  },
-  headerButton: {
-    flex: 1,
+    height: 50,
+    marginTop: 0,
     backgroundColor: "#007BFF",
-    padding: 10,
-    borderRadius: 8,
-    marginHorizontal: 5,
-    alignItems: "center",
+    width: sizes.pageWidth,
+    justifyContent: "center",
+    alignSelf: "center",
   },
   headerButtonText: {
     color: "#fff",
     fontWeight: "bold",
+    fontSize: 16,
   },
   pokemonItem: {
     flexDirection: "row",

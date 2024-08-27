@@ -1,13 +1,20 @@
+import { BASE_URL } from "@/api/urls";
 import React, { useState, useEffect, memo } from "react";
 import { Image, ImageStyle, StyleProp, Text, View } from "react-native";
 
-const ImageComponent = ({ name, style }: { name: string, style?:StyleProp<ImageStyle> }) => {
+const ImageComponent = ({
+  name,
+  style,
+}: {
+  name: string;
+  style?: StyleProp<ImageStyle>;
+}) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchImageUrl = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/icon/${name.toLowerCase()}`);
+        const response = await fetch(`${BASE_URL}/icon/${name.toLowerCase()}`);
         const url = await response.text();
         setImageUrl(url);
       } catch (error) {
@@ -19,7 +26,7 @@ const ImageComponent = ({ name, style }: { name: string, style?:StyleProp<ImageS
   }, [name]);
 
   if (!imageUrl) {
-    return <View style={{width:60, height:60}} />
+    return <View style={{ width: 60, height: 60 }} />;
   }
 
   return (
